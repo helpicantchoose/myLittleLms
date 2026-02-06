@@ -1,0 +1,86 @@
+/* it's all a deadcode someday i will unify stules but i really dont care for now*/
+:root {
+    --mnu-maroon: #8b1d22;
+    --mnu-gold: #c5a059;
+    --mnu-white: #ffffff;
+    --mnu-gray: #f4f4f4;
+    --mnu-text: #333333;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--mnu-gray);
+    margin: 0;
+    color: var(--mnu-text);
+}
+
+/* Unified Navbar */
+.mnu-nav {
+    background-color: var(--mnu-maroon);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.mnu-nav .nav-brand {
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Unified Buttons */
+.btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+/* Primary Button (Maroon) */
+.btn-primary {
+    background-color: var(--mnu-maroon);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #a3242a;
+}
+
+/* Outline/Nav Button (White) */
+.btn-outline {
+    background-color: white;
+    color: var(--mnu-maroon);
+    border: 1px solid white;
+}
+
+.btn-outline:hover {
+    background-color: var(--mnu-gold);
+    color: white;
+    border-color: var(--mnu-gold);
+}
+
+/* Danger Button (Red) */
+.btn-danger {
+    background-color: #ff4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #cc0000;
+}
+
+/* Unified Cards */
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-top: 5px solid var(--mnu-maroon);
+}

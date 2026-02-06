@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Course Content</title>
+    <style>
+        a { color: white; text-decoration: none; font-weight: bold; display: flex; align-items: center; }
+        :root { --mnu-maroon: #8b1d22; }
+        body { font-family: sans-serif; background: #f4f4f4; margin: 0; }
+        nav { background: var(--mnu-maroon); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .box { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        details { border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px; overflow: hidden; }
+        summary { padding: 15px; background: #f8f8f8; cursor: pointer; font-weight: bold; border-bottom: 1px solid #ddd; }
+        .row { padding: 12px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-open { background: var(--mnu-maroon); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .teacher-panel { margin-top: 30px; border: 2px dashed var(--mnu-maroon); padding: 20px; border-radius: 8px; background: #fffcfc; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; }
+        h2 { color: var(--mnu-maroon); margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <nav style="background:#8b1d22; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+         <a href="index.html">
+                <img src="Untitled.png" alt="Logo" style="height: 40px;"> 
+                <span id="courseHeader">LMS DASHBOARD</span>
+        </a>
+
+        <div id="navRight" style="display:flex; align-items:center;">
+            <span id="uName" style="margin-right:15px; font-weight:bold;"></span>
+            <button onclick="location.href='index.html'" style="background:white; color:var(--mnu-maroon); border:none; padding:8px 15px; cursor:pointer; border-radius:4px; font-weight:bold;">Back</button>
+        </div>
+    </nav>
+
+<div class="box">
+    <h2 id="courseTitle" style="color:#8b1d22;"></h2>
+    
+    <div id="actionPanel" style="margin-bottom: 20px;">
+        <button id="statsBtn" class="btn-open">
+        </button>
+    </div>
+
+    <details open style="margin-bottom: 20px;">
+        <summary style="padding:15px; background:#f1f1f1; cursor:pointer; font-weight:bold; border:1px solid #ddd;">
+            📚 Materials
+        </summary>
+        <div id="lectureList" style="padding:10px;"></div>
+    </details>
+
+    <details open>
+        <summary style="padding:15px; background:#f1f1f1; cursor:pointer; font-weight:bold; border:1px solid #ddd;">
+            📝 Assignments (Graded)
+        </summary>
+        <div id="assignmentList" style="padding:10px;"></div>
+    </details>
+
+    <div id="teacherPanel" style="display:none;" class="teacher-panel">
+        <h3>Teacher: Add New Content</h3>
+        <input type="text" id="newTitle" placeholder="Title">
+        <textarea id="newDetails" placeholder="Content text or instructions..."></textarea>
+        <select id="newType">
+            <option value="Material">Material (Reading)</option>
+            <option value="Assignment">Assignment (Graded)</option>
+        </select>
+        <button onclick="addContent()" class="btn-open" style="width:100%; padding:15px; margin-top:10px;">Add to Course</button>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id');
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    function renderItems(items) {
+        if (!items || items.length === 0) return "<p style='padding:10px; color:grey;'>No items found.</p>";
+
+        return items.map(item => `
+            <div class="row" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:10px;">
+                <span>${item.type === 'Assignment' ? '📝' : '📄'} <b>${item.title}</b></span>
+                
+                <div style="display:flex; gap:10px;">
+                    <!-- Open Button (Visible to everyone) -->
+                    <button class="btn-open" onclick="location.href='assignment.html?courseId=${courseId}&title=${encodeURIComponent(item.title)}&type=${item.type}'">
+                        ${item.type === 'Assignment' ? 'View' : 'Read'}
+                    </button>
+
+                    <!-- DELETE BUTTON (Only visible if you are an Admin/Teacher) -->
+                    ${role === 'admin' ? `
+                        <button onclick="deleteMaterial('${item.title}')" 
+                                style="background:#34393B; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px; font-weight:bold;">
+                            🗑️
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+ 
+    async function loadCourse() {
+        if (!token) { window.location.href = 'login.html'; return; }
+        if (role === 'admin' || role === 'superadmin') document.getElementById('teacherPanel').style.display = 'block';
+        const statsBtn = document.getElementById('statsBtn');
+        if (role === 'admin' || role === 'superadmin') {
+            statsBtn.innerHTML = "📊 Participants";
+            statsBtn.onclick = () => location.href = 'participants.html?id=' + courseId;
+            document.getElementById('teacherPanel').style.display = 'block'; 
+        } else {
+            statsBtn.innerHTML = "📜 My Grades ";
+            statsBtn.onclick = () => location.href = 'participants.html?id=' + courseId;
+        }
+ 
+
+        try {
+            const res = await fetch(`/api/courses/${courseId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const course = await res.json();
+            document.getElementById('courseHeader').innerText = course.title;
+            document.getElementById('courseTitle').innerText = course.title;
+
+            const allContent = course.content || [];
+            const lectures = allContent.filter(i => i.type === 'Material');
+            const assignments = allContent.filter(i => i.type === 'Assignment');
+
+            document.getElementById('lectureList').innerHTML = renderItems(lectures);
+            document.getElementById('assignmentList').innerHTML = renderItems(assignments);
+
+        } catch (err) {
+            console.error("Error loading course:", err);
+        }
+    }
+    async function deleteMaterial(title) {
+        if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+
+        try {
+            const res = await fetch(`/api/courses/${courseId}/content/${encodeURIComponent(title)}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                alert("Deleted successfully!");
+                location.reload(); 
+            } else {
+                alert("Failed to delete. Check your permissions.");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+        }
+    }
+
+    var simplemde;
+// We wait for the DOM to load to find the textarea
+window.onload = function() {
+    simplemde = new SimpleMDE({ 
+        element: document.getElementById("newDetails"),
+        placeholder: "Type your content here (Markdown supported)...",
+        spellChecker: false
+    });
+};
+
+        // Update your addContent function to get data from SimpleMDE
+        async function addContent() {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            
+            // FETCH VALUE FROM THE MARKDOWN EDITOR instead of raw textarea
+            const details = simplemde.value(); 
+
+            if (!title || !details) return alert("Please fill in title and details.");
+
+            await fetch(`/api/courses/${courseId}/content`, {
+                method: 'PATCH',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ title, details, type, url: "#" })
+            });
+            location.reload();
+        }
+
+    loadCourse();
+</script>
+
+</body>
+</html>

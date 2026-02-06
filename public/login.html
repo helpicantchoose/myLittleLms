@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNU AIS Login</title>
+    <style>
+        
+        body {  background-image: url("joyful.jpg");background-repeat: no-repeat;background-size: cover;background-attachment: fixed;background-position: center; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #8b1d22; padding: 40px; border-radius: 8px; color: white; width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 4px; box-sizing: border-box; }
+        button { background: white; color: #8b1d22; border: none; padding: 12px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        button:hover { background: #ddd; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>LMS Login</h2>
+        <input type="email" id="email" placeholder="Email (e.g. teacher@aitu.edu.kz)">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleLogin()">Login</button>
+    </div>
+
+    <script>
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+       
+                if (!response.ok) {
+                    const errorText = await response.text(); 
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch(e) {
+                        errorData = { message: "Invalid email or password" };
+                    }
+                    alert(errorData.message || "Login failed!");
+                    return; 
+                }
+
+                const data = await response.json();
+                
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('role', data.role);
+                localStorage.setItem('name', data.name);
+                localStorage.setItem('userId', data.id);
+                window.location.href = 'index.html';
+
+            } catch (err) {
+                console.error("Connection error:", err);
+                alert("Cannot connect to server. Is it running?");
+            }
+        }
+    </script>
+</body>
+</html>

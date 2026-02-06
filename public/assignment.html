@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Assignment Page</title>
+    
+    <style>
+        .nava { color: white; text-decoration: none; font-weight: bold; display: flex; align-items: center; }
+        body { font-family: sans-serif; background:#f4f4f4; margin:0; }
+        .container { max-width:700px; margin:50px auto; background:white; padding:30px; border-radius:8px; }
+        .student-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center; }
+        input { width:60px; padding:5px; }
+        :root { --mnu-maroon: #8b1d22; }
+        nav { background: var(--mnu-maroon); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <nav style="background:#8b1d22; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+         <a class ="nava" href="index.html">
+                <img src="Untitled.png" alt="Logo" style="height: 40px;"> 
+                <span id="courseHeader">LMS DASHBOARD</span>
+        </a>
+
+        <div id="navRight" style="display:flex; align-items:center;">
+            <span id="uName" style="margin-right:15px; font-weight:bold;"></span>
+            <button onclick="history.back()" style="background:white; color:var(--mnu-maroon); border:none; padding:8px 15px; cursor:pointer; border-radius:4px; font-weight:bold;">Back</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h2 id="taskTitle" class="mnu-maroon"></h2>
+        <p id="description">Instructions: Please complete the task by the deadline.</p>
+        <hr>
+
+        <div id="studentView" style="display:none;">
+            <h3>Your Submission Status</h3>
+            <div style="font-size:24px;">Grade: <span id="myGrade" style="color:green; font-weight:bold;"></span> / 100</div>
+            <p><b>Teacher's Comment:</b> <span id="myComment" style="font-style:italic; color:#555;"></span></p>
+        </div>
+
+        <div id="studentUpload" style="display:none; margin-top:20px; padding:20px; border:2px dashed #8b1d22; border-radius:8px;">
+    <h3>📤 Submit Your Work</h3>
+    <p>Upload your PowerPoint or PDF below:</p>
+    <input type="file" id="fileInput" style="margin-bottom:10px;">
+    <button class="btn btn-primary" id="uploadBtn" onclick="handleFileUpload()">Upload & Submit</button>
+    <p id="uploadStatus" style="font-size:0.9rem; color:green;"></p>
+        </div>
+
+        <div id="teacherView" style="display:none;">
+            <h3>Grade Students</h3>
+            <div id="studentList"></div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const courseId = params.get('courseId');
+        const title = params.get('title');
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        document.getElementById('taskTitle').innerText = title;
+
+        const userId = localStorage.getItem('userId'); 
+
+        async function init() {
+            const type = params.get('type');
+            await loadTaskDetails();
+
+            if (type === 'Assignment') {
+                if (role === 'admin' || role === 'superadmin') {
+                    document.getElementById('teacherView').style.display = 'block';
+                    loadStudents();
+                } else {
+                    // Students see the upload box
+                    document.getElementById('studentView').style.display = 'block';
+                    document.getElementById('studentUpload').style.display = 'block';
+                    loadMyGrade();
+                }
+            }
+        }
+
+                async function handleFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) return alert("Select a file first");
+
+            const btn = document.getElementById('uploadBtn');
+            btn.innerText = "Uploading to Cloud...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // STEP A: Upload to Supabase (via our /api/upload route)
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+
+                if (uploadData.url) {
+                    // STEP B: Link that URL to this specific assignment in MongoDB
+                    const saveRes = await fetch('/api/enrollments/grade', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ 
+                            studentId: userId, 
+                            courseId: courseId, 
+                            item: title, // This links it to the current assignment title from the URL
+                            fileUrl: uploadData.url,
+                            comment: "Student submitted a file."
+                        })
+                    });
+
+                    if (saveRes.ok) {
+                        alert("File uploaded and assignment submitted!");
+                        location.reload();
+                    }
+                }
+            } catch (e) {
+                alert("Upload failed. Check console.");
+            } finally {
+                btn.innerText = "Upload & Submit";
+                btn.disabled = false;
+            }
+        }
+
+        async function loadTaskDetails() {
+            try {
+                const res = await fetch(`/api/courses/${courseId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const course = await res.json();
+                const task = course.content.find(item => item.title === title);
+
+                if (task && task.details) {
+                    // FIX: We use marked.parse() to convert markdown to HTML
+                    // and innerHTML to render it
+                    document.getElementById('description').innerHTML = marked.parse(task.details);
+                } else {
+                    document.getElementById('description').innerText = "No specific instructions provided.";
+                }
+            } catch (err) {
+                console.error("Error loading task details:", err);
+            }
+        }
+
+        async function loadMyGrade() {
+            try {
+                const res = await fetch(`/api/enrollments/course/${courseId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const enroll = await res.json();
+                const gradeEntry = enroll.grades.find(g => g.item === title);
+                
+                if (gradeEntry) {
+                    document.getElementById('myGrade').innerText = gradeEntry.score;
+                    document.getElementById('myComment').innerText = gradeEntry.comment || "No feedback provided.";
+                } else {
+                    document.getElementById('myGrade').innerHTML = "<i>Not graded yet</i>";
+                    document.getElementById('myComment').innerText = "Feedback will appear here once graded.";
+                }
+            } catch (err) {
+                console.error("Error loading grade:", err);
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetch(`/api/enrollments/course/${courseId}/students`, { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const enrollments = await res.json();
+                
+                document.getElementById('studentList').innerHTML = enrollments.map(e => {
+                    const sId = e.student_id._id;
+
+                    // 1. Find the grade entry for THIS specific assignment
+                    const assignmentGrade = e.grades?.find(g => g.item === title);
+                    
+                    const currentScore = assignmentGrade ? assignmentGrade.score : "";
+                    const currentComment = assignmentGrade ? assignmentGrade.comment : "";
+                    const hasFile = assignmentGrade && assignmentGrade.fileUrl;
+
+                    return `
+                        <div class="student-row" style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <b>Student: ${e.student_id.name}</b>
+                                
+                                <!-- FILE LINK: This is what the teacher sees -->
+                                ${hasFile ? `
+                                    <a href="${assignmentGrade.fileUrl}" target="_blank" 
+                                    style="background:#2e7d32; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem; font-weight:bold;">
+                                    📥 VIEW POWERPOINT
+                                    </a>
+                                ` : '<span style="color:grey; font-size:0.8rem;">No file submitted</span>'}
+                            </div>
+
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="score-${sId}" value="${currentScore}" placeholder="0-100" style="width:70px;">
+                                <input type="text" id="comment-${sId}" value="${currentComment}" placeholder="Add feedback..." style="flex-grow:1;">
+                                <button class="btn btn-primary" onclick="submitGrade('${sId}')" style="width:auto; padding:5px 15px;">
+                                    ${assignmentGrade ? 'Update' : 'Grade'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function submitGrade(studentId) {
+            try {
+                const scoreInput = document.getElementById(`score-${studentId}`);
+                const commentInput = document.getElementById(`comment-${studentId}`);
+
+                if (!scoreInput || !commentInput) {
+                    console.error("Could not find input elements for student:", studentId);
+                    return;
+                }
+
+                const score = scoreInput.value;
+                const comment = commentInput.value;
+
+                if (score === "" || score > 100 || score < 0) {
+                    return alert("Please enter a valid score between 0 and 100");
+                }
+
+                const res = await fetch('/api/enrollments/grade', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ 
+                        studentId, 
+                        courseId, 
+                        item: title, 
+                        score, 
+                        comment 
+                    })
+                });
+
+                if (res.ok) {
+                    alert("Grade and feedback saved successfully!");
+                    loadStudents(); 
+                } else {
+                    const errData = await res.json();
+                    alert("Error: " + (errData.message || "Failed to save grade"));
+                }
+            } catch (err) {
+                console.error("Error submitting grade:", err);
+            }
+        }
+
+async function handleFileUpload() {
+    const fileInput = document.getElementById('fileInput');
+    
+    // 1. Check if a file was actually selected
+    if (fileInput.files.length === 0) return alert("Please select a file first");
+
+    const btn = document.getElementById('uploadBtn');
+    btn.innerText = "Uploading to Cloud...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+        // STEP A: Upload the physical file to Supabase via our backend
+        const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+
+        // THE FIX: We define uploadData here by reading the server response
+        const uploadData = await uploadRes.json();
+
+        if (uploadData.url) {
+            // STEP B: Link that cloud URL to the specific assignment in MongoDB
+            // Note: We use /submit (User route) instead of /grade (Admin route)
+            const saveRes = await fetch('/api/enrollments/submit', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ 
+                    courseId: courseId, 
+                    item: title, // Assignment title from the URL
+                    fileUrl: uploadData.url 
+                })
+            });
+
+            if (saveRes.ok) {
+                alert("Assignment Submitted Successfully!");
+                location.reload(); // Refresh so student sees the submission status
+            } else {
+                const errorInfo = await saveRes.json();
+                alert("Error saving to database: " + errorInfo.message);
+            }
+        } else {
+            alert("Upload failed: Cloud server did not return a URL.");
+        }
+
+    } catch (e) {
+        console.error("Full upload error:", e);
+        alert("System error during upload. Check console.");
+    } finally {
+        // Re-enable button
+        btn.innerText = "Upload & Submit";
+        btn.disabled = false;
+    }
+}
+
+        init();
+    </script>
+</body>
+</html>

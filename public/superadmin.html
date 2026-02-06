@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Administration</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        :root { --mnu-maroon: #8b1d22; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
+        .navbutton { background:white; color:var(--mnu-maroon); border:none; padding:8px 15px; cursor:pointer; border-radius:4px; font-weight:bold; width: 10%; }
+        nav { background: var(--mnu-maroon); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .panel { max-width: 800px; margin: 20px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h3 { color: var(--mnu-maroon); border-bottom: 2px solid var(--mnu-maroon); padding-bottom: 5px; margin-top: 30px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: var(--mnu-maroon); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 4px; margin-top: 5px; }
+        button:hover { opacity: 0.9; }
+        .status-msg { margin-top: 15px; padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; display: none; text-align: center; }
+        .delete-box { 
+            border: 2px solid #ff4444; 
+            padding: 15px; 
+            margin-top: 10px; 
+            border-radius: 8px; 
+            background: #fffafa;
+        }
+        .update-box { 
+            border: 2px solid #64a8d7; 
+            padding: 15px; 
+            margin-top: 10px; 
+            border-radius: 8px; 
+            background: #ebf9fa;
+        }
+        .delete-header { color: #cc0000; margin-top: 0; font-size: 1rem; }
+        .update-header { color: #3e95b7; margin-top: 0; font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span id="courseHeader">Management Panel</span>
+        <button class="navbutton" onclick="location.href='index.html'" style="background:white; color:var(--mnu-maroon); border:none; padding:8px 15px; cursor:pointer; border-radius:4px; font-weight:bold;">Back</button>
+    </nav>
+
+    <div class="panel">
+        <p id="status" class="status-msg">Action successful!</p>
+        <h3>1. Manage Accounts (Students/Teachers)</h3>
+        <div class="card">
+            <h4>Create New</h4>
+            <input type="text" id="uName" placeholder="Full Name">
+            <input type="email" id="uEmail" placeholder="Email Address">
+            <input type="password" id="uPass" placeholder="Password">
+            <select id="uRole">
+                <option value="user">Student</option>
+                <option value="admin">Teacher</option>
+            </select>
+            <button class="btn btn-primary" onclick="createUser()">Register User</button>
+
+            <div class="update-box">
+                <h4>Update User Details</h4>
+                <select id="updateUserSelect"><option>Select User...</option></select>
+                <input type="text" id="newName" placeholder="New Full Name (leave empty to keep current)">
+                <input type="password" id="newPass" placeholder="New Password (leave empty to keep current)">
+                <button class="btn btn-primary" onclick="updateUser()">Update User</button>
+            </div>
+
+            <div class="delete-box">
+                <h4 class="delete-header">Delete Existing User</h4>
+                <select id="deleteUserSelect"><option>Loading Users...</option></select>
+                <button class="btn btn-danger" onclick="deleteUser()">Delete Selected User</button>
+            </div>
+        </div>
+
+        <h3>2. Manage Courses</h3>
+        <div class="card">
+            <h4>Create New Course</h4>
+            <input type="text" id="cTitle" placeholder="Course Title (e.g. Macroeconomics)">
+            <input type="text" id="cCat" placeholder="Category">
+            <label>Assign Instructor:</label>
+            <select id="teacherSelect"><option>Loading...</option></select>
+            <button class="btn btn-primary" onclick="createCourse()">Create Course</button>
+
+            <div class="update-box" >
+            <h4>Rename Course</h4>
+            <select id="renameCourseSelect"><option>Select Course...</option></select>
+            <input type="text" id="newCourseTitle" placeholder="New Course Title">
+            <button class="btn btn-primary"  onclick="renameCourse()">Rename Course</button>
+                </div>
+
+            <div class="delete-box">
+                <h4 class="delete-header">Delete Existing Course</h4>
+                <select id="deleteCourseSelect"><option>Loading...</option></select>
+                <button class="btn btn-danger" onclick="deleteCourse()">Delete Selected Course</button>
+            </div>
+        </div>
+
+
+        <h3>3. Manage Enrollments</h3>
+        <div class="card">
+            <h4>Enroll Student</h4>
+            <label>Select Student:</label>
+            <select id="studentSelect"><option>Loading...</option></select>
+            <label>Select Course:</label>
+            <select id="courseSelect"><option>Loading...</option></select>
+            <button class="btn btn-primary" onclick="enrollStudent()">Enroll Student</button>
+
+            <div class="delete-box">
+                <h4 class="delete-header">Unenroll Student (Remove from Course)</h4>
+                <select id="unenrollSelect"><option>Loading Enrollments...</option></select>
+                <button class="btn btn-danger" onclick="unenrollStudent()">Unenroll Selected</button>
+            </div>
+        </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        if (role !== 'superadmin') location.href = 'index.html';
+
+        async function fetchData() {
+            try {
+                const tRes = await fetch('/api/auth/manage/users?role=admin', { 
+                    headers: {'Authorization': `Bearer ${token}`} 
+                });
+                const teachers = await tRes.json();
+                
+                document.getElementById('teacherSelect').innerHTML = teachers.map(t => 
+                    `<option value="${t._id}">${t.name} (${t.email})</option>`
+                ).join('');
+
+                const sRes = await fetch('/api/auth/manage/users?role=user', { 
+                    headers: {'Authorization': `Bearer ${token}`} 
+                });
+                const students = await sRes.json();
+                
+                document.getElementById('studentSelect').innerHTML = students.map(s => 
+                    `<option value="${s._id}">${s.name}</option>`
+                ).join('');
+
+                const allUsers = [...teachers, ...students];
+                const userOptionsHtml = allUsers.map(u => 
+                    `<option value="${u._id}">${u.name} (${u.role})</option>`
+                ).join('');
+
+                document.getElementById('deleteUserSelect').innerHTML = userOptionsHtml;
+                document.getElementById('updateUserSelect').innerHTML = userOptionsHtml;
+
+                const cRes = await fetch('/api/courses', { 
+                    headers: {'Authorization': `Bearer ${token}`} 
+                });
+                const courses = await cRes.json();
+                
+    
+                const courseOptions = courses.map(c => 
+                    `<option value="${c._id}">${c.title} (Teacher: ${c.teacher_id?.name || 'None'})</option>`
+                ).join('');
+
+                document.getElementById('renameCourseSelect').innerHTML = courseOptions;
+                document.getElementById('courseSelect').innerHTML = courseOptions;
+                document.getElementById('deleteCourseSelect').innerHTML = courseOptions;
+
+
+                const eRes = await fetch('/api/enrollments/manage/all', { 
+                    headers: {'Authorization': `Bearer ${token}`} 
+                });
+                const enrollments = await eRes.json();
+                
+                document.getElementById('unenrollSelect').innerHTML = enrollments.map(e => {
+                    const studentName = e.student_id?.name || 'Unknown Student';
+                    const courseTitle = e.course_id?.title || 'Unknown Course';
+                    const teacherName = e.course_id?.teacher_id?.name || 'No Teacher';
+                    
+                    return `<option value="${e._id}">${studentName} enrolled in ${courseTitle} (Teacher: ${teacherName})</option>`;
+                }).join('');
+
+            } catch (err) { 
+                console.error("Error in fetchData:", err); 
+            }
+        }
+
+        async function deleteUser() {
+            const id = document.getElementById('deleteUserSelect').value;
+            if (!confirm("Delete this user forever?")) return;
+            const res = await fetch(`/api/auth/manage/users/${id}`, { method: 'DELETE', headers: {'Authorization': `Bearer ${token}`} });
+            if (res.ok) { showStatus("User Deleted"); fetchData(); }
+        }
+
+        async function deleteCourse() {
+            const id = document.getElementById('deleteCourseSelect').value;
+            if (!confirm("Delete this course and all its content?")) return;
+            const res = await fetch(`/api/courses/${id}`, { method: 'DELETE', headers: {'Authorization': `Bearer ${token}`} });
+            if (res.ok) { showStatus("Course Deleted"); fetchData(); }
+        }
+
+        async function createUser() {
+            const body = { name: uName.value, email: uEmail.value, password: uPass.value, role: uRole.value };
+            await fetch('/api/auth/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+            showStatus("User Created"); fetchData();
+        }
+
+        async function createCourse() {
+            const body = { title: cTitle.value, category: cCat.value, teacher_id: teacherSelect.value };
+            await fetch('/api/courses', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(body) });
+            showStatus("Course Created"); fetchData();
+        }
+
+        async function enrollStudent() {
+            const body = { student_id: studentSelect.value, course_id: courseSelect.value };
+            await fetch('/api/enrollments/assign', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(body) });
+            showStatus("Enrolled!");
+        }
+
+        async function unenrollStudent() {
+            const id = document.getElementById('unenrollSelect').value;
+            if (!confirm("Remove this student from the course? Grades will be lost.")) return;
+            
+            const res = await fetch(`/api/enrollments/manage/${id}`, { 
+                method: 'DELETE', 
+                headers: {'Authorization': `Bearer ${token}`} 
+            });
+            
+            if (res.ok) {
+                showStatus("Student Unenrolled");
+                fetchData();
+            }
+        }
+
+                async function updateUser() {
+            const id = document.getElementById('updateUserSelect').value;
+            const name = document.getElementById('newName').value;
+            const password = document.getElementById('newPass').value;
+
+            const res = await fetch(`/api/auth/manage/users/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name, password })
+            });
+            if (res.ok) { showStatus("User Updated!"); fetchData(); }
+        }
+
+        async function renameCourse() {
+            const id = document.getElementById('renameCourseSelect').value;
+            const title = document.getElementById('newCourseTitle').value;
+
+            const res = await fetch(`/api/courses/${id}/rename`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ title })
+            });
+            if (res.ok) { showStatus("Course Renamed!"); fetchData(); }
+        }
+
+        function showStatus(msg) {
+            const s = document.getElementById('status');
+            s.innerText = msg; s.style.display = 'block';
+            setTimeout(() => s.style.display = 'none', 3000);
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>

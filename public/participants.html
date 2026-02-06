@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Course Participants</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+    <style>
+         a { color: white; text-decoration: none; font-weight: bold; display: flex; align-items: center; }
+        .stats-container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f8f8; color: #8b1d22; }
+        .avg-high { color: green; font-weight: bold; }
+        .avg-low { color: #8b1d22; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav style="background:#8b1d22; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+         <a href="index.html">
+                <img src="Untitled.png" alt="Logo" style="height: 40px;"> 
+                <span id="courseHeader">LMS DASHBOARD</span>
+        </a>
+
+        <div id="navRight" style="display:flex; align-items:center;">
+            <span id="uName" style="margin-right:15px; font-weight:bold;"></span>
+            <button onclick="history.back()" style="background:white; color:var(--mnu-maroon); border:none; padding:8px 15px; cursor:pointer; border-radius:4px; font-weight:bold;">Back</button>
+        </div>
+    </nav>
+
+<div class="stats-container">
+    <h2 id="courseTitle">Loading...</h2>
+    <p id="statsHeader"></p>
+
+    <table>
+        <thead id="tableHead">
+        </thead>
+        <tbody id="statsTableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id');
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    async function loadStats() {
+        const cRes = await fetch(`/api/courses/${courseId}`, { headers: {'Authorization': `Bearer ${token}`} });
+        const course = await cRes.json();
+        document.getElementById('courseTitle').innerText = course.title;
+
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('statsTableBody');
+
+        if (role === 'admin' || role === 'superadmin') {
+            document.getElementById('statsHeader').innerText = "Class Enrollment List";
+            tableHead.innerHTML = `<tr><th>Student Name</th><th>Email</th><th>Tasks</th><th>Average</th></tr>`;
+            
+            const res = await fetch(`/api/enrollments/course/${courseId}/stats`, { headers: {'Authorization': `Bearer ${token}`} });
+            const stats = await res.json();
+            
+            tableBody.innerHTML = stats.map(s => `
+                <tr>
+                    <td><b>${s.studentName}</b></td>
+                    <td>${s.studentEmail}</td>
+                    <td>${s.count} items</td>
+                    <td style="color:${s.average >= 50 ? 'green' : 'red'}; font-weight:bold;">${s.average}%</td>
+                </tr>
+            `).join('');
+        } 
+        else {
+            document.getElementById('statsHeader').innerText = "Grade Report";
+            tableHead.innerHTML = `<tr><th>Assignment Title</th><th>Date</th><th>Feedback</th><th>Grade</th></tr>`;
+            
+            const eRes = await fetch(`/api/enrollments/course/${courseId}`, { headers: {'Authorization': `Bearer ${token}`} });
+            const enrollment = await eRes.json();
+            
+            const sRes = await fetch(`/api/enrollments/course/${courseId}/my-stats`, { headers: {'Authorization': `Bearer ${token}`} });
+            const stats = await sRes.json();
+
+            if (!enrollment.grades || enrollment.grades.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No grades recorded yet.</td></tr>";
+            } else {
+                tableBody.innerHTML = enrollment.grades.map(g => `
+                    <tr>
+                        <td><b>${g.item}</b></td>
+                        <td>${new Date(g.date).toLocaleDateString()}</td>
+                        <td style="font-style:italic; color:#666;">${g.comment || 'No comment'}</td>
+                        <td style="font-weight:bold; color:green;">${g.score}/100</td>
+                    </tr>
+                `).join('');
+                
+                tableBody.innerHTML += `
+                    <tr style="background:#f1f1f1; font-weight:bold;">
+                        <td colspan="3" style="text-align:right;">Course Total Average:</td>
+                        <td style="color:#8b1d22; font-size:1.1rem;">${stats.avg.toFixed(1)}%</td>
+                    </tr>
+                `;
+            }
+        }
+    }
+    loadStats();
+</script>
+</body>
+</html>
