@@ -147,25 +147,47 @@
             }
         }
 
-        async function loadMyGrade() {
-            try {
-                const res = await fetch(`/api/enrollments/course/${courseId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const enroll = await res.json();
-                const gradeEntry = enroll.grades.find(g => g.item === title);
-                
-                if (gradeEntry) {
-                    document.getElementById('myGrade').innerText = gradeEntry.score;
-                    document.getElementById('myComment').innerText = gradeEntry.comment || "No feedback provided.";
-                } else {
-                    document.getElementById('myGrade').innerHTML = "<i>Not graded yet</i>";
-                    document.getElementById('myComment').innerText = "Feedback will appear here once graded.";
-                }
-            } catch (err) {
-                console.error("Error loading grade:", err);
-            }
-        }
+async function loadMyGrade() {
+    const res = await fetch(`/api/enrollments/course/${courseId}`, { headers:{'Authorization':`Bearer ${token}`} });
+    const enroll = await res.json();
+    const grade = enroll.grades.find(g => g.item === title);
+    
+    const studentView = document.getElementById('studentView');
+    
+    if (grade && grade.fileUrl) {
+        // --- LOGIC CHANGE START ---
+        // If score is 0, it might be a grade. If it's missing (undefined/null), it's pending.
+        const hasScore = (grade.score !== undefined && grade.score !== null);
+        const scoreDisplay = hasScore ? `${grade.score} / 100` : "<span style='color:orange'>Pending Review</span>";
+        const feedbackDisplay = grade.comment || "<i>No feedback provided yet.</i>";
+        // --- LOGIC CHANGE END ---
+
+        studentView.innerHTML = `
+            <div style="background:#e8f5e9; padding:15px; border-radius:8px; border-left:5px solid green; margin-bottom:20px;">
+                <p>✅ <b>Work Submitted:</b></p>
+                <a href="${grade.fileUrl}" target="_blank" class="btn btn-outline">Download My Submission</a>
+                <button onclick="deleteMyWork()" class="btn btn-danger" style="margin-left:10px;">Delete & Resubmit</button>
+            </div>
+            <hr>
+            <h3>Grade: ${scoreDisplay}</h3>
+            <p><b>Instructor Feedback:</b> ${feedbackDisplay}</p>
+        `;
+        document.getElementById('studentUpload').style.display = 'none';
+    } else {
+        document.getElementById('myGrade').innerText = "Not submitted yet";
+    }
+}
+
+async function deleteMyWork() {
+    if (!confirm("Delete your file? You will need to upload a new one.")) return;
+    
+    await fetch('/api/enrollments/delete-submission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ courseId, item: title })
+    });
+    location.reload();
+}
 
         async function loadStudents() {
             try {

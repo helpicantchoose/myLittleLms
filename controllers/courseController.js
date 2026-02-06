@@ -1,6 +1,7 @@
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const mongoose = require('mongoose');
+const { supabase, getFilePathFromUrl } = require('../middleware/supabase');
 
 exports.getAll = async (req, res) => {
     try {
@@ -69,30 +70,50 @@ exports.create = async (req, res) => {
 exports.deleteContent = async (req, res) => {
     try {
         const { courseId, title } = req.params;
-        const updatedCourse = await Course.findByIdAndUpdate(
-            courseId,
-            { $pull: { content: { title: title } } },
-            { new: true }
-        );
-        await Enrollment.updateMany(
-            { course_id: new mongoose.Types.ObjectId(courseId) },
-            { $pull: { grades: { item: title } } }
-        );
 
-        console.log(`Cleanup: Deleted assignment '${title}' and all related grades.`);
-        res.json({ message: "Content and related grades deleted", updatedCourse });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+        // Find all enrollments to find files that need deleting
+        const enrollments = await Enrollment.find({ course_id: courseId });
+        
+        for (const enroll of enrollments) {
+            const gradeEntry = enroll.grades.find(g => g.item === title);
+            if (gradeEntry && gradeEntry.fileUrl) {
+                const path = getFilePathFromUrl(gradeEntry.fileUrl);
+                if (path) await supabase.storage.from('submissions').remove([path]);
+            }
+        }
+
+        // Standard cleanup logic
+        await Course.findByIdAndUpdate(courseId, { $pull: { content: { title } } });
+        await Enrollment.updateMany({ course_id: courseId }, { $pull: { grades: { item: title } } });
+
+        res.json({ message: "Assignment and cloud files removed." });
+    } catch (err) { res.status(500).json(err); }
 };
 
 exports.deleteFullCourse = async (req, res) => {
     try {
+        const enrollments = await Enrollment.find({ course_id: req.params.id });
+        
+        // Find every single file in every student's record for this course
+        let filesToDelete = [];
+        enrollments.forEach(e => {
+            e.grades.forEach(g => {
+                if (g.fileUrl) {
+                    const path = getFilePathFromUrl(g.fileUrl);
+                    if (path) filesToDelete.push(path);
+                }
+            });
+        });
+
+        if (filesToDelete.length > 0) {
+            await supabase.storage.from('submissions').remove(filesToDelete);
+        }
+
+        await Enrollment.deleteMany({ course_id: req.params.id });
         await Course.findByIdAndDelete(req.params.id);
-        res.json({ message: "Course deleted successfully" });
-    } catch (err) {
-        res.status(500).json(err);
-    }
+        
+        res.json({ message: "Course and all cloud storage cleared." });
+    } catch (err) { res.status(500).json(err); }
 };
 
 exports.renameCourse = async (req, res) => {

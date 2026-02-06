@@ -86,7 +86,7 @@
                         <td><b>${g.item}</b></td>
                         <td>${new Date(g.date).toLocaleDateString()}</td>
                         <td style="font-style:italic; color:#666;">${g.comment || 'No comment'}</td>
-                        <td style="font-weight:bold; color:green;">${g.score}/100</td>
+                        <td style="font-weight:bold; color:green;">${g.score !== undefined && g.score !== null ? `${g.score}/100` : ' - /100'}</td>
                     </tr>
                 `).join('');
                 
