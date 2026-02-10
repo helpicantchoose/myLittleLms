@@ -8,9 +8,9 @@
     <style>
         .nava { color: white; text-decoration: none; font-weight: bold; display: flex; align-items: center; }
         body { font-family: sans-serif; background:#f4f4f4; margin:0; }
-        .container { max-width:700px; margin:50px auto; background:white; padding:30px; border-radius:8px; }
+        .container { max-width:900px; margin:50px auto; background:white; padding:30px; border-radius:8px; }
         .student-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center; }
-        input { width:60px; padding:5px; }
+        input { padding:5px; }
         :root { --mnu-maroon: #8b1d22; }
         nav { background: var(--mnu-maroon); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
     </style>
@@ -40,9 +40,10 @@
 
         <div id="studentUpload" style="display:none; margin-top:20px; padding:20px; border:2px dashed #8b1d22; border-radius:8px;">
     <h3>📤 Submit Your Work</h3>
-    <p>Upload your PowerPoint or PDF below:</p>
+    <p>Upload your files below:</p>
     <input type="file" id="fileInput" style="margin-bottom:10px;">
-    <button class="btn btn-primary" id="uploadBtn" onclick="handleFileUpload()">Upload & Submit</button>
+    <br>
+    <button class="btn btn-primary" id="uploadBtn" onclick="handleFileUpload()" style="background:#ced4da; color:black; border:none; padding:10px 15px; margin-top:10px; cursor:pointer; border-radius:4px; font-weight:bold;">Submit</button>
     <p id="uploadStatus" style="font-size:0.9rem; color:green;"></p>
         </div>
 
@@ -72,7 +73,6 @@
                     document.getElementById('teacherView').style.display = 'block';
                     loadStudents();
                 } else {
-                    // Students see the upload box
                     document.getElementById('studentView').style.display = 'block';
                     document.getElementById('studentUpload').style.display = 'block';
                     loadMyGrade();
@@ -92,7 +92,6 @@
             formData.append('file', fileInput.files[0]);
 
             try {
-                // STEP A: Upload to Supabase (via our /api/upload route)
                 const uploadRes = await fetch('/api/upload', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
@@ -101,28 +100,27 @@
                 const uploadData = await uploadRes.json();
 
                 if (uploadData.url) {
-                    // STEP B: Link that URL to this specific assignment in MongoDB
                     const saveRes = await fetch('/api/enrollments/grade', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ 
                             studentId: userId, 
                             courseId: courseId, 
-                            item: title, // This links it to the current assignment title from the URL
+                            item: title, 
                             fileUrl: uploadData.url,
                             comment: "Student submitted a file."
                         })
                     });
 
                     if (saveRes.ok) {
-                        alert("File uploaded and assignment submitted!");
+                        alert("Assignment submitted!");
                         location.reload();
                     }
                 }
             } catch (e) {
                 alert("Upload failed. Check console.");
             } finally {
-                btn.innerText = "Upload & Submit";
+                btn.innerText = "Submit";
                 btn.disabled = false;
             }
         }
@@ -136,8 +134,6 @@
                 const task = course.content.find(item => item.title === title);
 
                 if (task && task.details) {
-                    // FIX: We use marked.parse() to convert markdown to HTML
-                    // and innerHTML to render it
                     document.getElementById('description').innerHTML = marked.parse(task.details);
                 } else {
                     document.getElementById('description').innerText = "No specific instructions provided.";
@@ -155,18 +151,15 @@ async function loadMyGrade() {
     const studentView = document.getElementById('studentView');
     
     if (grade && grade.fileUrl) {
-        // --- LOGIC CHANGE START ---
-        // If score is 0, it might be a grade. If it's missing (undefined/null), it's pending.
         const hasScore = (grade.score !== undefined && grade.score !== null);
         const scoreDisplay = hasScore ? `${grade.score} / 100` : "<span style='color:orange'>Pending Review</span>";
         const feedbackDisplay = grade.comment || "<i>No feedback provided yet.</i>";
-        // --- LOGIC CHANGE END ---
 
         studentView.innerHTML = `
             <div style="background:#e8f5e9; padding:15px; border-radius:8px; border-left:5px solid green; margin-bottom:20px;">
                 <p>✅ <b>Work Submitted:</b></p>
                 <a href="${grade.fileUrl}" target="_blank" class="btn btn-outline">Download My Submission</a>
-                <button onclick="deleteMyWork()" class="btn btn-danger" style="margin-left:10px;">Delete & Resubmit</button>
+                <button onclick="deleteMyWork()" class="nava" style="background:#ced4da; color:black; border:none; padding:15px 15px; margin-top:10px; cursor:pointer; border-radius:4px; font-weight:bold;">Delete submission</button>
             </div>
             <hr>
             <h3>Grade: ${scoreDisplay}</h3>
@@ -198,10 +191,7 @@ async function deleteMyWork() {
                 
                 document.getElementById('studentList').innerHTML = enrollments.map(e => {
                     const sId = e.student_id._id;
-
-                    // 1. Find the grade entry for THIS specific assignment
-                    const assignmentGrade = e.grades?.find(g => g.item === title);
-                    
+                    const assignmentGrade = e.grades?.find(g => g.item === title);     
                     const currentScore = assignmentGrade ? assignmentGrade.score : "";
                     const currentComment = assignmentGrade ? assignmentGrade.comment : "";
                     const hasFile = assignmentGrade && assignmentGrade.fileUrl;
@@ -211,13 +201,12 @@ async function deleteMyWork() {
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                                 <b>Student: ${e.student_id.name}</b>
                                 
-                                <!-- FILE LINK: This is what the teacher sees -->
                                 ${hasFile ? `
                                     <a href="${assignmentGrade.fileUrl}" target="_blank" 
-                                    style="background:#2e7d32; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem; font-weight:bold;">
-                                    📥 VIEW POWERPOINT
+                                    style="background:#2e7d32; color:white; padding:5px 10px; margin:10px; border-radius:4px; text-decoration:none; font-size:0.8rem; font-weight:bold;">
+                                    📥 Viev Submission
                                     </a>
-                                ` : '<span style="color:grey; font-size:0.8rem;">No file submitted</span>'}
+                                ` : '<span style="color:grey; font-size:0.8rem; margin:10px">No file submitted</span>'}
                             </div>
 
                             <div style="display:flex; gap:10px;">
@@ -279,8 +268,6 @@ async function deleteMyWork() {
 
 async function handleFileUpload() {
     const fileInput = document.getElementById('fileInput');
-    
-    // 1. Check if a file was actually selected
     if (fileInput.files.length === 0) return alert("Please select a file first");
 
     const btn = document.getElementById('uploadBtn');
@@ -291,19 +278,15 @@ async function handleFileUpload() {
     formData.append('file', fileInput.files[0]);
 
     try {
-        // STEP A: Upload the physical file to Supabase via our backend
         const uploadRes = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
 
-        // THE FIX: We define uploadData here by reading the server response
         const uploadData = await uploadRes.json();
 
         if (uploadData.url) {
-            // STEP B: Link that cloud URL to the specific assignment in MongoDB
-            // Note: We use /submit (User route) instead of /grade (Admin route)
             const saveRes = await fetch('/api/enrollments/submit', {
                 method: 'POST',
                 headers: { 
@@ -312,14 +295,14 @@ async function handleFileUpload() {
                 },
                 body: JSON.stringify({ 
                     courseId: courseId, 
-                    item: title, // Assignment title from the URL
+                    item: title, 
                     fileUrl: uploadData.url 
                 })
             });
 
             if (saveRes.ok) {
                 alert("Assignment Submitted Successfully!");
-                location.reload(); // Refresh so student sees the submission status
+                location.reload();
             } else {
                 const errorInfo = await saveRes.json();
                 alert("Error saving to database: " + errorInfo.message);
@@ -332,8 +315,7 @@ async function handleFileUpload() {
         console.error("Full upload error:", e);
         alert("System error during upload. Check console.");
     } finally {
-        // Re-enable button
-        btn.innerText = "Upload & Submit";
+        btn.innerText = "Submit";
         btn.disabled = false;
     }
 }

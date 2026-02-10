@@ -155,7 +155,6 @@
     }
 
     var simplemde;
-// We wait for the DOM to load to find the textarea
 window.onload = function() {
     simplemde = new SimpleMDE({ 
         element: document.getElementById("newDetails"),
@@ -163,13 +162,9 @@ window.onload = function() {
         spellChecker: false
     });
 };
-
-        // Update your addContent function to get data from SimpleMDE
         async function addContent() {
             const title = document.getElementById('newTitle').value;
             const type = document.getElementById('newType').value;
-            
-            // FETCH VALUE FROM THE MARKDOWN EDITOR instead of raw textarea
             const details = simplemde.value(); 
 
             if (!title || !details) return alert("Please fill in title and details.");
