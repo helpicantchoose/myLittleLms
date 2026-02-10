@@ -1,0 +1,775 @@
+{
+  "info": {
+    "_postman_id": "d639ff14-5106-4a99-912c-bead72c5b131",
+    "name": "Test collections of API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "authRoutes",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "0829c480-04f9-4e9c-9ca3-ad1d0a70c292",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "fac6272c-faef-45a5-8bc6-f12f6e3aa794",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "2ffeef73-8d65-4e00-8e1c-9569b74036e7",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"superadmin@aitu.edu.kz\",\r\n    \"password\": \"imnotgivingyoumypassword\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "be8f3498-0841-4fa8-9ab8-943a0818178b",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "bda37c86-b96e-4002-9640-62ab32e476e3",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "d8e91f29-91cf-4c80-a7cb-ef2e49da61c7",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Test Test\", \"email\": \"testtest@aitu.kz\", \"password\": \"123\", \"role\": \"admin\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "edit user",
+          "id": "3d21244a-50f0-4030-b810-a904aaa40bc7",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"user\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/manage/users/698bab052d2b5c1cf8804bef",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "manage",
+                "users",
+                "698bab052d2b5c1cf8804bef"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete user",
+          "id": "a8f5e7be-44b0-46be-85af-322e968ff160",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/manage/users/698bab052d2b5c1cf8804bef",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "manage",
+                "users",
+                "698bab052d2b5c1cf8804bef"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get users by role",
+          "id": "42b3baba-4147-45db-bd72-e4848d74c05f",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/auth/manage/users/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "manage",
+                "users",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "2cc70554-aebe-48f1-a893-2f4d08050fff"
+    },
+    {
+      "name": "courseRoutes",
+      "item": [
+        {
+          "name": "get courses",
+          "id": "3697724c-6a76-4511-9c63-009ab7823334",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get course by id",
+          "id": "c80836cb-43cf-4ebd-b974-158505fc9d6e",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/697dff0b8872e8a105bf6600",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                "697dff0b8872e8a105bf6600"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course",
+          "id": "a733dbcc-fdba-4006-ab0b-03cf263a0ad0",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Advanced Databases\",\r\n  \"category\": \"Computer Science\",\r\n  \"teacher_id\": \"6984fe3d6dae909a4e339f71\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Content",
+          "id": "a4eed908-f5f2-4c4c-8ecb-fd5d3fc917b9",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Week 1: NoSQL Intro\",\r\n  \"type\": \"Material\",\r\n  \"details\": \"Read the documentation on MongoDB basics.\",\r\n  \"url\": \"#\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/698baf4f2d2b5c1cf8804bff/content",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                "698baf4f2d2b5c1cf8804bff",
+                "content"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rename Course",
+          "id": "6daa7b20-f2ab-41cc-9784-eefba5c1bddc",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/698baf4f2d2b5c1cf8804bff",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                "698baf4f2d2b5c1cf8804bff"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course",
+          "id": "aad74d8e-5edc-4b37-b647-86cf7ef1e7f5",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/698baf4f2d2b5c1cf8804bff",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "courses",
+                "698baf4f2d2b5c1cf8804bff"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "f5d7381b-83e3-46e5-8411-227adfd90719"
+    },
+    {
+      "name": "enrollmentRoutes",
+      "item": [
+        {
+          "name": "Getting My courses",
+          "id": "8dd7aa73-989d-4db6-a55d-24fa0f80239c",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/my-courses",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "my-courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Course Details",
+          "id": "365341f2-fde7-4bd7-b39f-bdad1c2a2ce0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/course/697dff0b8872e8a105bf6600",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "course",
+                "697dff0b8872e8a105bf6600"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Average From all Courses",
+          "id": "47fd3bd8-6a2d-4926-871b-502b8309211d",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get course average grade",
+          "id": "5f6734ed-c653-482c-b709-85538f5eb3d8",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/course/697dff0b8872e8a105bf6600/stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "course",
+                "697dff0b8872e8a105bf6600",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Work",
+          "id": "b4b89db6-b395-42fd-aa26-83dbc4f22d6e",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get students in the course",
+          "id": "4ef8d524-2f46-4ee7-b899-6ac01b36c9c0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/course/697dff0b8872e8a105bf6600/students",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "course",
+                "697dff0b8872e8a105bf6600",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grade student",
+          "id": "251bb40d-d32f-4e96-b057-9a6ddf93c3f1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"studentId\": \"697e1a0ac684e33441036277\",\r\n  \"courseId\": \"6979eee672f438378b799398\",\r\n  \"item\": \"Midterm\",\r\n  \"score\": 95,\r\n  \"comment\": \"Well done!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/grade",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "grade"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add assignment",
+          "id": "4e1c7470-ebd6-41d3-b31a-47ab0a63eb6f",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/assign",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "assign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get stat of this course",
+          "id": "95d50b4d-2e03-40ec-b665-953e480820a4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/course/697e1a0ac684e33441036277/my-stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "course",
+                "697e1a0ac684e33441036277",
+                "my-stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all enrollments",
+          "id": "ff935b6d-709b-416b-b167-404adfdf0df8",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/manage/all",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "manage",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unenroll",
+          "id": "abf3078c-b504-4647-b662-888743e7f70c",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"studentId\": \"697e1685bfd72b39a25d6374\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/manage/697dff0b8872e8a105bf6600",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "manage",
+                "697dff0b8872e8a105bf6600"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete submission",
+          "id": "84c21e7b-de61-493d-ac6f-7975ee378fbd",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollments/delete-submission",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "enrollments",
+                "delete-submission"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "c50964a6-3661-409c-8b96-f1c9afa27c1f"
+    },
+    {
+      "name": "uploadRoutes",
+      "item": [
+        {
+          "name": "upload",
+          "id": "c384f3bf-2f9f-4a9b-8d56-33c3120f83a6",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/upload/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "upload",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "88e2c47e-1578-40cf-a9e1-13cd98ea29a4"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{superadmin_token}}",
+        "type": "string"
+      }
+    ]
+  }
+}
