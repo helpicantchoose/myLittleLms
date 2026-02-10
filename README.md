@@ -15,6 +15,9 @@ With the functions like:
 3) grading students
 4) User stats
 
+<img src="https://github.com/helpicantchoose/helpicantchoose-web_technologies_2_assignment_4/blob/main/imgages/%D0%BF.png?raw=true" style="width: 400px; height: auto;" />
+Marinosyan, A. Kh., & Andryushkova, O. V. (2021). Multicriteria methodology for assessing the quality of LMS within an emergent learning system. Informatics and Education, 5(324)
+
 
 ## Requirements
 This project uses environment variables for security. You must create a .env file with MongoDB connections string locally.
